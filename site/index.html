@@ -150,16 +150,31 @@ tr:last-child td{border-bottom:none}
 .news-list .src.财联社{background:rgba(245,185,66,.12);color:var(--gold)}
 .news-list .src.金十{background:rgba(29,191,139,.12);color:#5fe0b4}
 
-.foot{text-align:center;padding:24px 16px 0;font-size:11px;color:var(--txt3);line-height:1.9}
+.foot{text-align:center;padding:24px 16px 90px;font-size:11px;color:var(--txt3);line-height:1.9}
 .foot .srcs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px}
 .foot .srcs span{padding:3px 9px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt2);font-size:10px}
-.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:linear-gradient(90deg,#1a1206,#2a1d06);border-top:1px solid #4a3a10;color:#e8d28a;font-size:11px;text-align:center;padding:8px;font-weight:600}
+
+/* === 4 Tab 分组导航 === */
+section[data-tab], .foot[data-tab]{display:none}
+section[data-tab].active, .foot[data-tab].active{display:block}
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;
+  background:rgba(20,24,32,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);
+  display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:100}
+.tabbar .tab{flex:1;text-align:center;padding:8px 2px 6px;font-size:11.5px;color:var(--txt3);
+  cursor:pointer;border-radius:8px;transition:color .15s,background .15s;user-select:none}
+.tabbar .tab .ic{display:block;font-size:15px;line-height:1;margin-bottom:3px;opacity:.7}
+.tabbar .tab.active{color:#7da6ff;background:rgba(74,141,255,.1)}
+.tabbar .tab.active .ic{opacity:1}
+.tabbar .tab:active{background:rgba(74,141,255,.06)}
+body{padding-bottom:64px}
+/* 顶部状态条 sticky（全局，所有 Tab 都见） */
+.sticky-top{position:sticky;top:0;z-index:50;background:rgba(20,24,32,.96);backdrop-filter:blur(8px)}
 .skl{color:var(--txt3);font-size:12px;padding:6px 0}
 </style>
 </head>
 <body>
 
-<div class="hdr">
+<div class="hdr sticky-top">
   <div class="row1">
     <div>
       <div class="ttl">每日盘前全球市场简报</div>
@@ -183,13 +198,13 @@ tr:last-child td{border-bottom:none}
 </div>
 
 <!-- 关键日程 -->
-<section>
+<section data-tab="1">
   <div class="sec-h"><span class="n">●</span><span class="cn">本周关键日程</span><span class="en">KEY EVENTS · 实时倒计时</span></div>
   <div class="ev-grid" id="evGrid"><div class="ev"><div class="ev-t">加载中…</div></div></div>
 </section>
 
 <!-- 01 隔夜全球市场 -->
-<section>
+<section data-tab="1">
   <div class="sec-h"><span class="n">01</span><span class="cn">隔夜全球市场</span><span class="en">OVERNIGHT RECAP</span></div>
 
   <div style="font-size:12px;color:var(--txt2);margin-bottom:8px">美股三大指数 + 费城半导体</div>
@@ -219,7 +234,7 @@ tr:last-child td{border-bottom:none}
 </section>
 
 <!-- 02 美联储与货币政策 -->
-<section>
+<section data-tab="1">
   <div class="sec-h"><span class="n">02</span><span class="cn">美联储与货币政策</span><span class="en">FED WATCH</span></div>
   <div class="card">
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="fedChips"></div>
@@ -228,19 +243,19 @@ tr:last-child td{border-bottom:none}
 </section>
 
 <!-- 03 重大地缘政治事件 -->
-<section>
+<section data-tab="1">
   <div class="sec-h"><span class="n">03</span><span class="cn">重大地缘政治事件</span><span class="en">GEOPOLITICS</span></div>
   <div class="card"><ul class="news-list" id="geoList"><li><span class="skl">等待资讯…</span></li></ul></div>
 </section>
 
 <!-- 04 对国内的影响 -->
-<section>
+<section data-tab="2">
   <div class="sec-h"><span class="n">04</span><span class="cn">对国内股市与经济的影响</span><span class="en">IMPACT ON CHINA</span></div>
   <div class="impact" id="impact"><div class="callout co-d"><div class="t">等待数据…</div></div></div>
 </section>
 
 <!-- 05 昨日A股大事 -->
-<section>
+<section data-tab="2">
   <div class="sec-h"><span class="n">05</span><span class="cn">昨日 A 股大事</span><span class="en">YESTERDAY</span></div>
   <div class="card" style="margin-bottom:10px"><span class="chip gold">上一交易日收盘回顾</span></div>
   <div class="idx-grid" id="aGrid"><div class="idx"><div class="nm">--</div></div></div>
@@ -249,7 +264,7 @@ tr:last-child td{border-bottom:none}
 </section>
 
 <!-- 06 今日盘前研判 -->
-<section>
+<section data-tab="2">
   <div class="sec-h"><span class="n">06</span><span class="cn">今日 A 股盘前研判</span><span class="en">TODAY</span></div>
   <div class="card" style="margin-bottom:10px"><span class="chip live">盘前研判 · 非盘中实时</span></div>
   <div class="idx-grid" id="todayGrid"><div class="idx"><div class="nm">--</div></div></div>
@@ -258,13 +273,13 @@ tr:last-child td{border-bottom:none}
 </section>
 
 <!-- 07 风险雷达 -->
-<section>
+<section data-tab="2">
   <div class="sec-h"><span class="n">07</span><span class="cn">今日需防范的风险</span><span class="en">RISK RADAR</span></div>
   <div class="impact" id="riskWrap"><div class="risk"><div class="rt"><span class="rname">加载中…</span></div></div></div>
 </section>
 
 <!-- 08 美股/韩股板块重点跟踪 -->
-<section>
+<section data-tab="3">
   <div class="sec-h"><span class="n">08</span><span class="cn">美股/韩股板块重点跟踪</span><span class="en">US/KR SECTOR TRACK · 基金映射</span></div>
   <div class="sess-bar" id="sessBar"><span class="clk" id="sessClk">--:--:--</span><span id="sessState">数据时段加载中…</span></div>
 
@@ -289,18 +304,25 @@ tr:last-child td{border-bottom:none}
 </section>
 
 <!-- 资讯流 -->
-<section>
+<section data-tab="4">
   <div class="sec-h"><span class="n">●</span><span class="cn">市场资讯流</span><span class="en">NEWS FEED</span></div>
   <div class="card"><ul class="news-list" id="newsList"><li><span class="skl">等待资讯…</span></li></ul></div>
 </section>
 
-<div class="foot">
+<div class="foot" data-tab="4">
   <div class="srcs" id="footSrcs"></div>
   数据来源：公开信息自动整理 · 仅供参考<br>
   本报告仅为市场信息汇总，不构成投资建议<br>
   市场有风险，投资需谨慎
 </div>
-<div class="bottom">📌 程序自动生成 · 不构成投资建议 · 理性投资</div>
+
+<!-- 底部固定 Tab 导航 -->
+<div class="tabbar" id="tabbar">
+  <div class="tab active" data-tab="1"><span class="ic">◎</span>全球</div>
+  <div class="tab" data-tab="2"><span class="ic">中</span>国内</div>
+  <div class="tab" data-tab="3"><span class="ic">＄</span>美股</div>
+  <div class="tab" data-tab="4"><span class="ic">≡</span>资讯</div>
+</div>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -674,6 +696,21 @@ function tickClock(){
   if(n.getMinutes()===5 && n.getSeconds()<2){ location.reload(); }
 }
 
+/* ---- 4 Tab 分组导航 ---- */
+function switchTab(n){
+  document.querySelectorAll('[data-tab]').forEach(el=>{
+    // 只切换 section 和 .foot，tabbar 自身不隐藏
+    if(el.tagName==='SECTION' || el.classList.contains('foot')){
+      el.classList.toggle('active', el.getAttribute('data-tab')===String(n));
+    }
+  });
+  document.querySelectorAll('.tabbar .tab').forEach(t=>{
+    t.classList.toggle('active', t.getAttribute('data-tab')===String(n));
+  });
+  try{ localStorage.setItem('brief_tab', String(n)); }catch(e){}
+  window.scrollTo(0,0);
+}
+
 /* ---- 启动 ---- */
 (function init(){
   // 页脚来源
@@ -687,6 +724,13 @@ function tickClock(){
   liveRefresh().then(scheduleNext).catch(scheduleNext);
   setInterval(tickClock, 1000);
   tickClock();
+  // Tab 导航绑定 + 恢复上次
+  let initTab='1';
+  try{ const saved=localStorage.getItem('brief_tab'); if(saved&&['1','2','3','4'].includes(saved)) initTab=saved; }catch(e){}
+  switchTab(initTab);
+  document.querySelectorAll('.tabbar .tab').forEach(t=>{
+    t.addEventListener('click', ()=>switchTab(t.getAttribute('data-tab')));
+  });
 })();
 </script>
 </body>
