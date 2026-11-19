@@ -229,6 +229,172 @@ def fetch_spark():
         except Exception: pass
     return out
 
+# ============ 重点跟踪个股 / 板块映射 / 基金映射 ============
+# 美股个股（新浪 gb_xxx 已验证可用）；SK hynix 境内多源不可达，占位 + 多源尝试
+US_STOCKS = [
+    ("asml","ASML","阿斯麦"),("wdc","WDC","西部数据"),("stx","STX","希捷"),
+    ("meta","META","Meta Platforms"),("mu","MU","美光"),("lite","LITE","Lumentum"),
+    ("sndk","SNDK","SanDisk"),("pfe","PFE","辉瑞"),("tsla","TSLA","特斯拉"),
+    ("nvda","NVDA","英伟达"),("tsm","TSM","台积电ADR"),
+]
+# SK hynix：韩国上市，境内接口难抓，多源尝试
+KR_STOCKS = [("000660","SK hynix","SK海力士")]
+
+# 9大板块 → 个股映射（symbol 与上面 US_STOCKS 的 symbol 或 KR_STOCKS 代码对齐）
+SECTOR_MAP = {
+    "cpo":            {"name":"CPO/光通信",     "stocks":["lite","nvda","tsm"], "note":"光器件/算力需求/先进封装"},
+    "pcb":            {"name":"PCB/封装基板",    "stocks":["tsm","nvda"],         "note":"AI服务器高多层板与封装基板需求传导"},
+    "innovation_drug":{"name":"创新药",         "stocks":["pfe"],                "note":"辉瑞管线与港股创新药情绪联动"},
+    "battery":        {"name":"新能源电池",     "stocks":["tsla"],               "note":"特斯拉电车+电池产业链代理"},
+    "solar":          {"name":"光伏",           "stocks":[],                     "note":"无直接美股对应，采用产业链代理(A股光伏指数)"},
+    "semi_equip":     {"name":"半导体设备",     "stocks":["asml","tsm","mu"],    "note":"光刻/晶圆代工/存储设备"},
+    "ai_chip":        {"name":"AI芯片/科创芯片","stocks":["nvda","meta","tsm"],  "note":"GPU/AI算力/先进封装"},
+    "humanoid":       {"name":"人形机器人",     "stocks":["tsla","meta"],        "note":"Optimus+AI大脑"},
+    "storage":        {"name":"存储芯片",       "stocks":["mu","wdc","stx","sndk","000660"], "note":"DRAM/NAND/HBM，SK hynix为HBM龙头"},
+}
+
+# 11 只 A 股基金 → 板块映射 + 代理说明（不把单只美股直接等同于基金净值）
+FUND_MAP = [
+    {"name":"东方人工智能主题混合C",         "code":"014366", "sectors":["ai_chip","cpo"],            "proxy":"AI芯片板块(NVDA/META/TSM)等权涨跌 + CPO板块(LITE/NVDA)"},
+    {"name":"广发新能源车电池ETF联接C",       "code":"012708", "sectors":["battery"],                 "proxy":"特斯拉(TSLA)电车+电池产业链代理"},
+    {"name":"广发港股创新药ETF联接(QDII)C",   "code":"013114", "sectors":["innovation_drug"],         "proxy":"辉瑞(PFE)创新药情绪 + 港股恒生医疗指数"},
+    {"name":"南方上证科创板芯片ETF联接C",     "code":"012639", "sectors":["ai_chip","semi_equip"],    "proxy":"AI芯片(NVDA/META/TSM)+半导体设备(ASML)"},
+    {"name":"永赢先进制造智选混合C",         "code":"015310", "sectors":["humanoid","semi_equip"],   "proxy":"人形机器人(TSLA/META)+半导体设备(ASML)"},
+    {"name":"华泰柏瑞南方东英恒生科技指数ETF联接(QDII)C","code":"013403","sectors":["ai_chip","humanoid"],"proxy":"恒生科技指数+AI芯片(NVDA/META)"},
+    {"name":"华泰柏瑞质量成长混合C",         "code":"010106", "sectors":["innovation_drug","solar","battery"],"proxy":"综合：创新药(PFE)+光伏代理+电池(TSLA)"},
+    {"name":"财通成长优选混合C",             "code":"001527", "sectors":["ai_chip","semi_equip"],     "proxy":"AI芯片(NVDA/META)+半导体设备(ASML)"},
+    {"name":"天弘中证电网设备主题指数C",     "code":"014137", "sectors":["pcb"],                     "proxy":"PCB/封装基板(TSM/NVDA)电力电子需求传导"},
+    {"name":"天弘中证光伏产业指数C",         "code":"011610", "sectors":["solar"],                   "proxy":"无直接美股，采用A股光伏产业指数代理"},
+    {"name":"方正富邦核心优势混合C",         "code":"010339", "sectors":["ai_chip","semi_equip"],     "proxy":"AI芯片(NVDA/META)+半导体设备(ASML)"},
+]
+
+def fetch_us_stocks():
+    """新浪美股个股：返回 {symbol: {name,price,pct,chg,open,high,low,vol,prevClose,timeET,preMarket}}"""
+    syms = ",".join("gb_"+s for s,_,_ in US_STOCKS)
+    out = {}
+    try:
+        txt = http(f"https://hq.sinajs.cn/list={syms}", headers={"Referer":"https://finance.sina.com.cn"}, timeout=12)
+        for sym,code,name in US_STOCKS:
+            m = re.search(r'hq_str_gb_%s="(.*?)"' % sym, txt)
+            if not m: continue
+            f = m.group(1).split(",")
+            if len(f) < 8: continue
+            try:
+                price = float(f[1]) if f[1] else None
+                pct = float(f[2]) if f[2] else 0
+                chg = float(f[4]) if f[4] else None
+                opn = float(f[5]) if f[5] else None
+                hi = float(f[6]) if f[6] else None
+                lo = float(f[7]) if f[7] else None
+                vol = float(f[10]) if len(f)>10 and f[10] else None
+                prev = float(f[26]) if len(f)>26 and f[26] else None
+                # f[24]=盘前时间, f[25]=收盘时间(EST), f[26]=前收
+                timeET = f[25] if len(f)>25 and "EST" in (f[25] or "") else ""
+                preMkt = float(f[21]) if len(f)>21 and f[21] else None
+                prePct = float(f[22]) if len(f)>22 and f[22] else None
+                out[sym] = {"name":name,"code":code,"price":price,"pct":pct,"chg":chg,
+                            "open":opn,"high":hi,"low":lo,"vol":vol,"prevClose":prev,
+                            "timeET":timeET,"preMarket":preMkt,"prePct":prePct,
+                            "src":"新浪财经"}
+            except Exception: continue
+    except Exception: pass
+    return out
+
+def fetch_korea():
+    """韩国大盘 + SK hynix：境内多源尝试，失败标记待补"""
+    kr = {"kospi":None,"kosdaq":None,"skHynix":None,"note":"境内接口受限"}
+    # 尝试新浪国际指数 + 东财 100.KS11
+    for url,hdr,key in [
+        ("https://hq.sinajs.cn/list=int_ks11",{"Referer":"https://finance.sina.com.cn"},"sina_ks11"),
+    ]:
+        try:
+            t = http(url, headers=hdr, timeout=6)
+            m = re.search(r'hq_str_int_ks11="(.*?)"', t)
+            if m and m.group(1):
+                f = m.group(1).split(",")
+                if len(f)>2 and f[1]:
+                    kr["kospi"] = {"name":"KOSPI","price":float(f[1]),"pct":float(f[3]) if f[3] else 0,"src":"新浪财经"}
+                    kr["note"] = "新浪财经"
+        except Exception: pass
+    # 东财 KS11（沙箱内常不通，保留尝试）
+    try:
+        r = em_jsonp("/api/qt/ulist.np/get?fltt=2&secids=100.KS11&fields=f2,f3,f12,f14", timeout=6)
+        for x in (r.get("data",{}).get("diff") or []):
+            if x.get("f2") not in (None,"-"):
+                kr["kospi"] = {"name":"KOSPI","price":float(x["f2"]),"pct":float(x.get("f3") or 0),"src":"东方财富"}
+                kr["note"] = "东方财富"
+    except Exception: pass
+    # SK hynix：境内不可达，标记待补
+    kr["skHynix"] = {"name":"SK海力士(SK hynix)","code":"000660.KS","price":None,"pct":None,
+                     "note":"境内接口不可达，以存储芯片板块(MU/WDC/STX/SNDK)作代理"}
+    return kr
+
+def calc_sector_perf(stocks_mp):
+    """各板块涨跌 = 板块内有个股数据的等权平均涨跌幅"""
+    sectors = {}
+    for key,info in SECTOR_MAP.items():
+        pcts, vols, detail = [], [], []
+        for sym in info["stocks"]:
+            s = stocks_mp.get(sym)
+            if not s or s.get("pct") is None: continue
+            pcts.append(s["pct"])
+            if s.get("vol"): vols.append(s["vol"])
+            detail.append({"symbol":sym.upper(),"name":s["name"],"price":s["price"],"pct":s["pct"],
+                           "vol":s.get("vol"),"src":s.get("src","")})
+        avg = round(sum(pcts)/len(pcts),2) if pcts else None
+        # 量比代理：板块平均成交相对个股10日均量的偏离（简化为成交额排序）
+        sectors[key] = {"name":info["name"],"pct":avg,"note":info["note"],
+                        "count":len(pcts),"detail":detail,
+                        "volSum":round(sum(vols),0) if vols else None}
+    return sectors
+
+def calc_signals(sectors, stocks_mp):
+    """板块加减仓信号：基于当日板块涨跌 + 量能 + 个股动能"""
+    sig = {}
+    for key,s in sectors.items():
+        pct = s.get("pct")
+        if pct is None:
+            sig[key] = {"action":"观望","reason":"数据缺失，无法判断","score":0}; continue
+        # 简化打分：涨跌主导 + 量能修正
+        score = pct  # 单日涨跌%
+        # 板块内上涨家数占比
+        up_n = sum(1 for d in s["detail"] if d["pct"]>0)
+        ratio = up_n/len(s["detail"]) if s["detail"] else 0.5
+        score += (ratio-0.5)*4
+        score = round(score,2)
+        if score > 1.5:   act,reason="加仓",f"板块均涨{pct}%、上涨家数{up_n}/{len(s['detail'])}，动能正向"
+        elif score < -1.5:act,reason="减仓",f"板块均跌{pct}%、下跌家数{len(s['detail'])-up_n}/{len(s['detail'])}，动能转弱"
+        else:             act,reason="观望",f"板块{pct}%、多空均衡，等待方向"
+        sig[key] = {"action":act,"reason":reason,"score":score}
+    return sig
+
+def us_session_state(stocks_mp):
+    """美股交易时段：盘前/盘中/收盘（依据新浪返回的 ET 时间）"""
+    # 新浪美股 f[26] 形如 "Nov 18 04:00PM EST"（收盘时间）
+    et = ""
+    for s in stocks_mp.values():
+        t = s.get("timeET","")
+        if t: et = t; break
+    # 简化判断：依据当前北京时间推算 ET（ET = 北京 -13）
+    now = datetime.datetime.now() - datetime.timedelta(hours=13)  # 粗略 ET
+    h = now.hour
+    # 美股盘中 ET 09:30-16:00, 盘前 04:00-09:30, 盘后 16:00-20:00
+    wd = now.weekday()
+    if wd >= 5:
+        session, sessZh = "closed","周末休市"
+    elif h < 4:
+        session, sessZh = "closed","盘前休市"
+    elif h < 9:
+        session, sessZh = "preMarket","盘前交易"
+    elif h < 16:
+        session, sessZh = "intraday","盘中交易"
+    elif h < 20:
+        session, sessZh = "afterHours","盘后交易"
+    else:
+        session, sessZh = "closed","收盘"
+    return {"session":session,"zh":sessZh,"etTime":et,
+            "beijingTime":datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+" 北京时间"}
+
 # ============ 资讯 ============
 def fetch_wscn(channel="global-channel", limit=18):
     try:
@@ -304,17 +470,40 @@ def read_events():
         return []
 
 def main():
-    print("[1/6] 全球行情…"); g = fetch_global()
-    print("[2/6] A股宽度…"); bd = fetch_breadth()
-    print("[3/6] 涨停池…"); pools, qdate = fetch_pools(); bd.update(pools)
-    print("[4/6] 板块+火花线…"); bo = fetch_boards(); sp = fetch_spark()
-    print("[5/6] 资讯…")
+    print("[1/8] 全球行情…"); g = fetch_global()
+    print("[2/8] 美股个股…"); us_st = fetch_us_stocks()
+    print("[3/8] 韩国大盘+SK hynix…"); kr = fetch_korea()
+    # 把 KOSPI 并入 asia（去重补充）
+    if kr.get("kospi") and not any(it.get("name")=="韩国KOSPI" and it.get("price") for it in g["asia"]):
+        for it in g["asia"]:
+            if it.get("name")=="韩国KOSPI" and not it.get("price"):
+                it.update({"price":kr["kospi"]["price"],"pct":kr["kospi"]["pct"],"src":"东方财富"}); break
+    print("[4/8] A股宽度…"); bd = fetch_breadth()
+    print("[5/8] 涨停池…"); pools, qdate = fetch_pools(); bd.update(pools)
+    print("[6/8] 板块+火花线…"); bo = fetch_boards(); sp = fetch_spark()
+    # 把美股个股火花线也并入（NVDA/ASML/MU/TSM/SK hynix板块龙头）
+    print("[7/8] 资讯+板块计算…")
     news = fetch_cls(12) + fetch_jin10(12) + fetch_wscn("global-channel", 18) + fetch_wscn("us-stock-channel", 10)
     seen=set(); news2=[]
     for n in news:
         if n["text"] in seen: continue
         seen.add(n["text"]); news2.append(n)
     news = news2[:30]
+    # 板块涨跌 + 信号 + 时段
+    sectors = calc_sector_perf(us_st)
+    signals = calc_signals(sectors, us_st)
+    session = us_session_state(us_st)
+    # 基金映射挂上代理板块表现
+    funds = []
+    for fm in FUND_MAP:
+        sec_pcts = [sectors[s]["pct"] for s in fm["sectors"] if sectors.get(s,{}).get("pct") is not None]
+        proxy_pct = round(sum(sec_pcts)/len(sec_pcts),2) if sec_pcts else None
+        sig = signals.get(fm["sectors"][0],{}) if fm["sectors"] else {}
+        funds.append({"name":fm["name"],"code":fm["code"],"sectors":fm["sectors"],
+                      "sectorNames":[sectors[s]["name"] for s in fm["sectors"] if sectors.get(s)],
+                      "proxy":fm["proxy"],"proxyPct":proxy_pct,
+                      "action":sig.get("action","观望"),"reason":sig.get("reason",""),
+                      "note":"代理指标，非基金当日净值"})
     temp = calc_temp(bd)
     trade_date = str(qdate or datetime.date.today().strftime("%Y%m%d"))
     trade_date = re.sub(r"(\d{4})(\d{2})(\d{2})", r"\1-\2-\3", trade_date)
@@ -324,6 +513,10 @@ def main():
         "aIndices": g["aIndices"], "bs": g["bs"],
         "breadth": bd, "boards": bo, "spark": sp, "news": news, "temperature": temp,
         "events": read_events(),
+        # 新增：美股/韩股重点跟踪
+        "usStocks": us_st, "korea": kr,
+        "sectors": sectors, "signals": signals,
+        "funds": funds, "session": session,
     }
     # 实时接入的源 + 标注整合来源（与页面页脚一致）
     live_src = ["华尔街见闻"]
@@ -336,7 +529,7 @@ def main():
     with open(OUT,"w",encoding="utf-8") as f:
         f.write("/* 盘前简报 · 自动生成 · "+payload["updatedAt"]+" */\nwindow.MARKET_DATA = "+json.dumps(payload, ensure_ascii=False)+";\n")
     print("OK ->", OUT)
-    print("温度:",temp,"涨停:",bd.get("zt"),"美股道指:",g["us"][0].get("price"),"资讯:",len(news))
+    print("温度:",temp,"涨停:",bd.get("zt"),"美股道指:",g["us"][0].get("price"),"资讯:",len(news),"个股:",len(us_st),"板块:",len(sectors),"基金:",len(funds))
 
 if __name__ == "__main__":
     main()

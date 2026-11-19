@@ -88,6 +88,32 @@ tr:last-child td{border-bottom:none}
 .bul li .b{color:var(--gold);flex-shrink:0}
 .hl{color:var(--gold);font-weight:700}
 .hlu{color:var(--up);font-weight:700}
+
+/* === 美股/韩股板块跟踪 === */
+.sec-tag{display:inline-block;font-size:10.5px;padding:2px 8px;border-radius:4px;font-weight:600;margin-left:6px}
+.sec-tag.pre{background:rgba(74,141,255,.18);color:#7da6ff}
+.sec-tag.live{background:rgba(245,95,95,.18);color:#ff8a8a}
+.sec-tag.closed{background:rgba(120,130,150,.15);color:var(--txt2)}
+.act{display:inline-block;font-size:11px;padding:2px 9px;border-radius:11px;font-weight:700}
+.act.add{background:rgba(245,60,60,.18);color:#ff6b6b;border:1px solid rgba(245,60,60,.35)}     /* 加仓=红(涨色) */
+.act.cut{background:rgba(60,200,120,.18);color:#4ec78f;border:1px solid rgba(60,200,120,.35)}   /* 减仓=绿(跌色) */
+.act.hold{background:rgba(180,188,205,.13);color:var(--txt2);border:1px solid var(--line)}
+.sector-row{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px dashed rgba(255,255,255,.05);font-size:12.5px}
+.sector-row:last-child{border-bottom:none}
+.sector-row .sn{flex:0 0 110px;color:#d6dfeb;font-weight:600}
+.sector-row .sp{flex:0 0 70px;text-align:right;font-weight:700}
+.sector-row .sd{flex:1;font-size:11px;color:var(--txt3);text-align:right}
+.stk-tbl{width:100%;font-size:11.5px;margin-top:4px}
+.stk-tbl th{font-size:10px;padding:4px 3px}
+.stk-tbl td{padding:4px 3px}
+.fund-card{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.fund-card .fh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.fund-card .fn{font-size:13px;font-weight:600;color:#e6ecf7;line-height:1.4}
+.fund-card .fc{font-size:10.5px;color:var(--txt3);margin-top:2px}
+.fund-card .fb{font-size:11px;color:var(--txt2);line-height:1.55;margin-top:4px;padding-top:6px;border-top:1px dashed rgba(255,255,255,.05)}
+.fund-card .fp{font-size:11px;color:var(--gold);margin-top:3px;font-style:italic}
+.sess-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11.5px;margin-bottom:10px;padding:7px 10px;background:rgba(74,141,255,.06);border-radius:6px;border:1px solid rgba(74,141,255,.18)}
+.sess-bar .clk{font-weight:700;color:#e6ecf7;font-variant-numeric:tabular-nums}
 .hld{color:var(--down);font-weight:700}
 
 .callout{border-radius:12px;padding:11px 13px;font-size:12.5px;line-height:1.75;border:1px solid transparent}
@@ -235,6 +261,31 @@ tr:last-child td{border-bottom:none}
 <section>
   <div class="sec-h"><span class="n">07</span><span class="cn">今日需防范的风险</span><span class="en">RISK RADAR</span></div>
   <div class="impact" id="riskWrap"><div class="risk"><div class="rt"><span class="rname">加载中…</span></div></div></div>
+</section>
+
+<!-- 08 美股/韩股板块重点跟踪 -->
+<section>
+  <div class="sec-h"><span class="n">08</span><span class="cn">美股/韩股板块重点跟踪</span><span class="en">US/KR SECTOR TRACK · 基金映射</span></div>
+  <div class="sess-bar" id="sessBar"><span class="clk" id="sessClk">--:--:--</span><span id="sessState">数据时段加载中…</span></div>
+
+  <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">美股大盘 + 韩国大盘</div>
+  <div class="idx-grid" id="usKrGrid"><div class="idx"><div class="nm">--</div></div></div>
+  <div style="height:10px"></div>
+  <div class="card"><ul class="bul" id="usKrBul"><li><span class="b">●</span><span class="skl">等待数据…</span></li></ul></div>
+
+  <div style="height:14px"></div>
+  <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">九大板块涨跌（等权平均） · 个股明细</div>
+  <div class="card" id="sectorWrap"><div class="sector-row"><span class="sn">加载中…</span></div></div>
+
+  <div style="height:14px"></div>
+  <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">板块轮动 · 产业链传导</div>
+  <div class="card"><ul class="bul" id="rotationBul"><li><span class="b">●</span><span class="skl">等待数据…</span></li></ul></div>
+
+  <div style="height:14px"></div>
+  <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">11 只基金 → 板块映射 · 加减仓建议</div>
+  <div id="fundWrap"><div class="fund-card"><div class="fn">加载中…</div></div></div>
+  <div style="height:6px"></div>
+  <div class="callout co-y" style="margin-top:8px"><div class="t">⚠️ 代理说明</div><div>下方"代理涨跌"为美股/韩股对应板块等权涨跌，仅作<b>方向性参考</b>，<b>不等于</b>基金当日净值。A 股基金净值请以基金公司披露为准。光伏板块无直接美股对应，采用 A 股光伏产业指数代理。SK hynix 境内接口不可达时，以存储芯片板块(MU/WDC/STX/SNDK)作代理。</div></div>
 </section>
 
 <!-- 资讯流 -->
@@ -450,10 +501,82 @@ function renderTemp(d){
   $('tempChip').textContent='情绪 '+t+'° · '+lvl;
 }
 
+/* === 08 美股/韩股板块跟踪 === */
+const fmtVol=v=>v==null?'—':v>=1e9?(v/1e9).toFixed(2)+'B':v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':v;
+const ACT_CLASS={加仓:'add',减仓:'cut',观望:'hold'};
+function renderUsKrTrack(d){
+  const sess=d.session||{};
+  const sClass=sess.session==='intraday'?'live':sess.session==='preMarket'||sess.session==='afterHours'?'pre':'closed';
+  // 时钟
+  function tick(){
+    const now=new Date();
+    const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0'),ss=String(now.getSeconds()).padStart(2,'0');
+    if($('sessClk')) $('sessClk').textContent=`${hh}:${mm}:${ss}`;
+  }
+  tick(); if(!window._sessTick){ window._sessTick=1; setInterval(tick,1000); }
+  $('sessState').innerHTML=`美股 <span class="sec-tag ${sClass}">${sess.zh||'—'}</span> · ${(sess.etTime||'').replace(/EST/g,'ET')} <span style="color:var(--txt3)">| 数据时间：${sess.beijingTime||''}</span>`;
+
+  // 美股大盘 + 韩国大盘
+  const us=(d.us||[]).filter(x=>x.name!=='费城半导体');
+  const kr=sess&&d.korea&&d.korea.kospi?[{name:'韩国KOSPI',price:d.korea.kospi.price,pct:d.korea.kospi.pct}]:[];
+  $('usKrGrid').innerHTML=[...us,...kr].map(it=>idxCard(it,false)).join('');
+
+  // 大盘结论
+  const dji=us[0],ndx=us[1],spx=us[2],kospi=kr[0];
+  const bul=[];
+  if(dji&&dji.pct!=null) bul.push(`<li><span class="b">●</span><span>美股三大指数 ${dji.pct<0?'集体收跌':'收涨'}：道指 <b class="${RED(dji.pct)}">${sign(dji.pct)}</b>、纳指 <b class="${RED(ndx&&ndx.pct)}">${ndx?sign(ndx.pct):'--'}</b>、标普 <b class="${RED(spx&&spx.pct)}">${spx?sign(spx.pct):'--'}</b>。</span></li>`);
+  if(kospi&&kospi.pct!=null) bul.push(`<li><span class="b">●</span><span>韩国 KOSPI <b class="${RED(kospi.pct)}">${sign(kospi.pct)}</b>（点位 ${kospi.price?kospi.price.toLocaleString('zh-CN',{maximumFractionDigits:2}):'—'}），${kospi.pct>0?'韩股走强':'韩股调整'}，关注对存储/半导体链条映射。</span></li>`);
+  const skh=d.korea&&d.korea.skHynix;
+  if(skh) bul.push(`<li><span class="b">●</span><span>SK hynix（000660.KS）${skh.price!=null?`现价 ${skh.price}（${skh.pct>=0?'+':''}${skh.pct}%）`:'<b style="color:var(--txt3)">境内接口不可达</b>'}，HBM 龙头，以存储芯片板块(MU/WDC/STX/SNDK)作代理。</span></li>`);
+  if(!bul.length) bul.push('<li><span class="skl">美股/韩股大盘数据加载中…</span></li>');
+  $('usKrBul').innerHTML=bul.join('');
+
+  // 九大板块
+  const secs=d.sectors||{}, sigs=d.signals||{};
+  const order=['storage','ai_chip','cpo','semi_equip','pcb','humanoid','battery','innovation_drug','solar'];
+  const rows=order.map(k=>{
+    const s=secs[k]; if(!s) return '';
+    const sig=sigs[k]||{action:'观望'};
+    const detail=s.detail||[];
+    const stkRows=detail.map(x=>`<tr><td>${x.name}</td><td class="num">${x.price!=null?x.price.toLocaleString('zh-CN',{maximumFractionDigits:2}):'—'}</td><td class="num ${RED(x.pct)}">${x.pct!=null?(x.pct>=0?'+':'')+x.pct.toFixed(2)+'%':'—'}</td><td class="num" style="color:var(--txt3)">${fmtVol(x.vol)}</td></tr>`).join('');
+    return `<div class="sector-row"><span class="sn">${s.name}</span>
+      <span class="sp ${RED(s.pct)}">${s.pct!=null?(s.pct>=0?'+':'')+s.pct.toFixed(2)+'%':'—'}</span>
+      <span class="sd">${s.note}</span>
+      <span class="act ${ACT_CLASS[sig.action]||'hold'}">${sig.action}</span></div>
+      ${detail.length?`<table class="stk-tbl"><tr><th>个股</th><th>现价</th><th>涨跌</th><th>成交量</th></tr>${stkRows}</table>`:''}`;
+  }).join('')||'<div class="sector-row"><span class="sn">无数据</span></div>';
+  $('sectorWrap').innerHTML=rows;
+
+  // 板块轮动/产业链传导
+  const sorted=order.map(k=>secs[k]).filter(s=>s&&s.pct!=null).sort((a,b)=>b.pct-a.pct);
+  const rot=[];
+  if(sorted.length){
+    const top=sorted[0], bot=sorted[sorted.length-1];
+    rot.push(`<li><span class="b">●</span><span>今日最强：<b class="hlu">${top.name}</b>（${top.pct>=0?'+':''}${top.pct.toFixed(2)}%），${top.name.includes('存储')?'HBM/DRAM涨价预期+AI算力拉动存储需求':top.name.includes('AI')?'AI算力与先进封装需求延续':top.name.includes('电池')?'电车产业链情绪修复':'板块动能正向'}。</span></li>`);
+    rot.push(`<li><span class="b">●</span><span>今日最弱：<b class="hld">${bot.name}</b>（${bot.pct>=0?'+':''}${bot.pct.toFixed(2)}%），${bot.pct<-1.5?'短期获利了结/估值消化':bot.pct<0?'板块小幅调整':'相对滞涨'}。</span></li>`);
+    rot.push(`<li><span class="b">●</span><span>产业链传导：AI算力需求→GPU(<b style="color:#d6dfeb">NVDA</b>)→先进封装/CoWoS(<b style="color:#d6dfeb">TSM</b>)→HBM存储(<b style="color:#d6dfeb">SK hynix/MU</b>)→光通信(<b style="color:#d6dfeb">LITE</b>)→PCB/封装基板(<b style="color:#d6dfeb">TSM/NVDA</b>)，链条联动性强，关注任一环节异动对全链映射。</span></li>`);
+    rot.push(`<li><span class="b">●</span><span>对基金映射：AI芯片/科创芯片方向受 NVDA/META/TSM 联动；存储/半导体设备受 ASML/SK hynix/MU 联动；人形机器人受 TSLA/META 联动；创新药看 PFE 创新药情绪+港股恒生医疗。</span></li>`);
+  } else rot.push('<li><span class="skl">板块数据加载中…</span></li>');
+  $('rotationBul').innerHTML=rot.join('');
+
+  // 11 只基金
+  const funds=d.funds||[];
+  $('fundWrap').innerHTML=funds.length?funds.map(f=>{
+    const act=f.action||'观望';
+    return `<div class="fund-card">
+      <div class="fh"><div><div class="fn">${f.name}</div><div class="fc">代码 ${f.code||'—'} · 映射板块：${(f.sectorNames||[]).join(' / ')||'—'}</div></div>
+      <span class="act ${ACT_CLASS[act]||'hold'}">${act}</span></div>
+      <div class="fb">代理涨跌：<b class="${RED(f.proxyPct)}">${f.proxyPct!=null?(f.proxyPct>=0?'+':'')+f.proxyPct.toFixed(2)+'%':'—'}</b> · 信号理由：${f.reason||'—'}</div>
+      <div class="fp">代理指标：${f.proxy||'—'}</div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:4px">${f.note||'代理指标，非基金当日净值'}</div>
+    </div>`;
+  }).join(''):'<div class="fund-card"><div class="fn">无基金数据</div></div>';
+}
+
 function renderAll(d){
   $('hdrDate').textContent=(d.tradeDate||'')+' · 盘前简报';
   renderTemp(d); renderUs(d); renderEu(d); renderAsia(d); renderCmd(d); renderBf(d);
-  renderFed(d); renderGeo(d); renderImpact(d); renderA(d); renderToday(d); renderRisk(d); renderNews(d);
+  renderFed(d); renderGeo(d); renderImpact(d); renderA(d); renderToday(d); renderRisk(d); renderUsKrTrack(d); renderNews(d);
 }
 
 /* ---- 实时行情刷新（东财 JSONP） ---- */
@@ -471,7 +594,9 @@ function jsonp(url,to=8000){
 }
 const ALL_SECIDS=['100.DJI','100.IXIC','100.SPX','100.INX','100.SOX','100.DAX','100.STOXX50E','100.SX5E','100.FTSE','100.CAC40',
   '100.KS11','100.N225','100.HSI','100.HSTECH','101.GC00Y','113.CL00Y','113.CO00Y','102.CL00Y','102.CO00Y',
-  '171.US2Y','171.US10Y','171.US30Y','100.UDI','133.USDCNH','1.000001','0.399001','0.399006','1.000016','1.000300','1.000905','1.000852','0.899050'];
+  '171.US2Y','171.US10Y','171.US30Y','100.UDI','133.USDCNH','1.000001','0.399001','0.399006','1.000016','1.000300','1.000905','1.000852','0.899050',
+  // 重点跟踪美股个股（东财 secid 100.代码）
+  '100.ASML','100.WDC','100.STX','100.META','100.MU','100.LITE','100.SNDK','100.PFE','100.TSLA','100.NVDA','100.TSM'];
 async function liveRefresh(){
   if(!snap){ $('liveTxt').textContent='无快照'; return; }
   try{
@@ -480,6 +605,29 @@ async function liveRefresh(){
     const d=snap;
     const apply=arr=>arr.forEach(it=>{const x=mp[it.code.split('.')[1]]; if(x&&x.f2!=null&&x.f2!=='-'){it.price=+x.f2;it.pct=+x.f3;if(x.f4!=null&&x.f4!=='-')it.chg=+x.f4;}});
     ['us','eu','asia','cmd','bfx','aIndices','bs'].forEach(k=>apply(d[k]=d[k]||[]));
+    // 实时更新美股个股 + 重算板块涨跌/信号
+    if(d.usStocks){
+      const SYM2SEC={asml:'ASML',wdc:'WDC',stx:'STX',meta:'META',mu:'MU',lite:'LITE',sndk:'SNDK',pfe:'PFE',tsla:'TSLA',nvda:'NVDA',tsm:'TSM'};
+      Object.keys(d.usStocks).forEach(sym=>{
+        const x=mp[SYM2SEC[sym]];
+        if(x&&x.f2!=null&&x.f2!=='-'){d.usStocks[sym].price=+x.f2;d.usStocks[sym].pct=+x.f3;}
+      });
+      // 重算板块（与脚本逻辑一致：等权平均）
+      const SECTORS={cpo:['lite','nvda','tsm'],pcb:['tsm','nvda'],innovation_drug:['pfe'],battery:['tsla'],solar:[],semi_equip:['asml','tsm','mu'],ai_chip:['nvda','meta','tsm'],humanoid:['tsla','meta'],storage:['mu','wdc','stx','sndk','000660']};
+      d.sectors=d.sectors||{};
+      Object.keys(SECTORS).forEach(k=>{
+        const old=d.sectors[k]||{name:'',note:''};
+        const pcts=[],detail=[];
+        SECTORS[k].forEach(sym=>{
+          const s=d.usStocks[sym]; if(!s||s.pct==null)return;
+          pcts.push(s.pct);
+          detail.push({symbol:sym.toUpperCase(),name:s.name,price:s.price,pct:s.pct,vol:s.vol,src:''});
+        });
+        old.pct=pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length*100)/100:null;
+        old.detail=detail; old.count=pcts.length;
+        d.sectors[k]=old;
+      });
+    }
     renderAll(d);
     $('liveDot').classList.add('on');
     const now=new Date();
