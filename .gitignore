@@ -6,3 +6,6 @@ __pycache__/
 # 临时
 _slices/
 *.log
+
+# 生成产物（由脚本/CI生成，不进版本库，避免本地与远端冲突）
+site/data.js

@@ -44,13 +44,8 @@ jobs:
           echo "---- data.js 摘要 ----"
           head -c 200 site/data.js || true
 
-      - name: 提交更新后的 data.js
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add site/data.js || true
-          git commit -m "chore(data): 自动更新盘前简报数据 $(date -u -d'+8 hours' '+%Y-%m-%d %H:%M') 北京时间" || echo "无变更可提交"
-          git push || echo "推送失败（可能无变更）"
+      # 注意：不把 data.js commit 回 main，避免本地推送冲突
+      # data.js 只在 Pages 部署产物里更新，main 分支保持纯净（只存源码）
 
       - name: 配置 GitHub Pages
         uses: actions/configure-pages@v5
