@@ -1,7 +1,7 @@
 {
-  "name": "Astrid 盘前全球市场简报",
-  "short_name": "Astrid",
-  "description": "每日盘前全球市场简报 · 美股/韩股板块跟踪 · A股盘前研判",
+  "name": "Astrid专属",
+  "short_name": "Astrid专属",
+  "description": "Astrid专属 · 每日盘前全球市场简报 · 美股/韩股板块跟踪 · A股盘前研判",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
