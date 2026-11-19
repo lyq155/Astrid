@@ -1,0 +1,8 @@
+# 依赖与缓存
+__pycache__/
+*.pyc
+.workbuddy/
+
+# 临时
+_slices/
+*.log

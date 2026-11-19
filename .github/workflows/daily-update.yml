@@ -1,0 +1,69 @@
+name: 每日盘前数据更新与部署
+
+on:
+  # 每个交易日（北京时间周一~周五 08:30）云端自动运行
+  # 北京 08:30 = UTC 00:30 同日，故 UTC 周一~周五 00:30
+  schedule:
+    - cron: "30 0 * * 1,2,3,4,5"
+  # 手动触发（Actions 页面点 Run workflow）
+  workflow_dispatch:
+  # 推送代码时也重跑一次数据并部署
+  push:
+    branches: [ main ]
+    paths:
+      - 'tools/**'
+      - 'site/index.html'
+      - 'site/events.json'
+      - '.github/workflows/**'
+
+permissions:
+  contents: write     # 提交 data.js 回仓库
+  pages: write        # 部署 GitHub Pages
+  id-token: write
+
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: 抓取数据生成 data.js
+        run: |
+          python tools/update_market_data.py
+          echo "---- data.js 摘要 ----"
+          head -c 200 site/data.js || true
+
+      - name: 提交更新后的 data.js
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data.js || true
+          git commit -m "chore(data): 自动更新盘前简报数据 $(date -u -d'+8 hours' '+%Y-%m-%d %H:%M') 北京时间" || echo "无变更可提交"
+          git push || echo "推送失败（可能无变更）"
+
+      - name: 配置 GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: 上传站点产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'site'
+
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: 输出访问地址
+        run: |
+          echo "✅ 已部署，访问地址: ${{ steps.deployment.outputs.page_url }}"

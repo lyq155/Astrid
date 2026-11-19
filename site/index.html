@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>每日盘前全球市场简报</title>
+<script src="data.js"></script>
+<style>
+:root{
+  --bg:#0b0e14; --bg2:#0f131b; --card:#141a24; --card2:#1a212e; --line:#222b3a;
+  --txt:#e6ecf3; --txt2:#8b97ad; --txt3:#5b6784;
+  --up:#f23645; --down:#1dbf8b; --gold:#f5b942; --blue:#4a8dff; --orange:#f08c3d;
+  --redBg:#2a1417; --grnBg:#10231b; --orgBg:#2a1d10; --ylwBg:#2a230a; --bluBg:#11233f;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:600px;margin:0 auto;padding-bottom:64px;-webkit-font-smoothing:antialiased}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--txt2)}
+.num{font-variant-numeric:tabular-nums}
+.upBg{background:rgba(242,54,69,.12)} .downBg{background:rgba(29,191,139,.12)}
+
+/* Header */
+.hdr{background:linear-gradient(150deg,#0e1838,#0b1226);padding:16px 18px 18px;border-bottom:1px solid var(--line)}
+.hdr .row1{display:flex;justify-content:space-between;align-items:center}
+.hdr .ttl{font-size:18px;font-weight:800;letter-spacing:.5px}
+.hdr .date{font-size:12px;color:#8fa6cf}
+.hdr .row2{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.chip{padding:4px 10px;border-radius:14px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aab6cc}
+.chip.live{border-color:rgba(74,141,255,.45);color:#7da6ff;background:rgba(74,141,255,.1)}
+.chip.gold{border-color:rgba(245,185,66,.4);color:var(--gold);background:rgba(245,185,66,.08)}
+/* 实时状态条 */
+.rtbar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:7px 10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;font-size:11px;color:var(--txt2);flex-wrap:wrap}
+.rtbar .clk{font-size:13px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.rtbar .sep{color:var(--txt3)}
+.rtbar .sess{padding:2px 9px;border-radius:10px;font-weight:700;font-size:10px}
+.rtbar .sess.open{background:rgba(242,54,69,.16);color:#ff8a93;border:1px solid rgba(242,54,69,.35)}
+.rtbar .sess.us{background:rgba(74,141,255,.14);color:#7da6ff;border:1px solid rgba(74,141,255,.35)}
+.rtbar .sess.closed{background:rgba(91,103,132,.16);color:var(--txt2);border:1px solid var(--line)}
+.rtbar .cd{color:var(--gold);font-variant-numeric:tabular-nums}
+.rtbar .upd{margin-left:auto;color:var(--txt3)}
+/* 价格变动动效 */
+.flash-up{animation:fu .8s ease} .flash-dn{animation:fd .8s ease}
+@keyframes fu{0%{background:rgba(242,54,69,.35)}100%{background:transparent}}
+@keyframes fd{0%{background:rgba(29,191,139,.35)}100%{background:transparent}}
+.pulse-tick{animation:pt 1s ease}
+@keyframes pt{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.dot.on{background:#31e88a;animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* 关键日程 */
+section{padding:16px 14px 0}
+.sec-h{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.sec-h .n{font-size:13px;font-weight:800;color:var(--gold);letter-spacing:1px}
+.sec-h .cn{font-size:15px;font-weight:800}
+.sec-h .en{font-size:10px;color:var(--txt3);letter-spacing:1.5px;margin-left:auto;text-transform:uppercase}
+.sec-h .ln{flex:1;height:1px;background:var(--line);margin-left:8px}
+
+.ev-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.ev{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px;position:relative;overflow:hidden}
+.ev .ev-date{font-size:11px;color:var(--txt2)}
+.ev .ev-t{font-size:13px;font-weight:700;margin:4px 0 6px;line-height:1.35}
+.ev .ev-cd{font-size:14px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+.ev .ev-cat{position:absolute;top:10px;right:10px;font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(74,141,255,.15);color:#7da6ff;border:1px solid rgba(74,141,255,.3)}
+.ev .stars{font-size:10px;color:var(--gold);margin-top:4px}
+.ev.done{opacity:.45}
+.ev.done .ev-cd{color:var(--txt3);font-size:11px}
+.ev.today{border-color:rgba(245,185,66,.5)}
+
+/* cards 通用 */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px}
+.idx-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.idx{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px}
+.idx .nm{font-size:11px;color:var(--txt2);margin-bottom:4px}
+.idx .row{display:flex;align-items:baseline;justify-content:space-between}
+.idx .px{font-size:18px;font-weight:800}
+.idx .pc{font-size:12px;font-weight:700}
+.idx .spk{margin-top:5px}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{color:var(--txt3);font-weight:500;text-align:right;padding:7px 4px;border-bottom:1px solid var(--line);font-size:11px}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 4px;text-align:right;border-bottom:1px dashed rgba(255,255,255,.05)}
+tr:last-child td{border-bottom:none}
+
+.bul{list-style:none}
+.bul li{display:flex;gap:8px;font-size:13px;line-height:1.75;color:#c8d2e4;margin-bottom:7px}
+.bul li:last-child{margin-bottom:0}
+.bul li .b{color:var(--gold);flex-shrink:0}
+.hl{color:var(--gold);font-weight:700}
+.hlu{color:var(--up);font-weight:700}
+.hld{color:var(--down);font-weight:700}
+
+.callout{border-radius:12px;padding:11px 13px;font-size:12.5px;line-height:1.75;border:1px solid transparent}
+.callout .t{font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.co-y{background:var(--ylwBg);border-color:#6e5a1e;color:#efe2b0} .co-y .t{color:var(--gold)}
+.co-r{background:var(--redBg);border-color:#6e2a30;color:#f2ccd0} .co-r .t{color:#ff8a93}
+.co-g{background:var(--grnBg);border-color:#1e5b41;color:#c9ecd9} .co-g .t{color:#3fe0a0}
+.co-o{background:var(--orgBg);border-color:#6e4a1e;color:#f2dfc5} .co-o .t{color:var(--orange)}
+.co-b{background:var(--bluBg);border-color:#25437a;color:#ccd9f2} .co-b .t{color:#6ea8ff}
+.co-d{background:#161b24;border-color:#2a3142;color:#aeb8cc} .co-d .t{color:var(--txt2)}
+
+.impact{display:grid;gap:9px}
+.risk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;position:relative;overflow:hidden}
+.risk .rt{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.risk .rname{font-size:13px;font-weight:700}
+.risk .sev{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:700}
+.sev.s1{background:rgba(242,54,69,.18);color:#ff8a93;border:1px solid rgba(242,54,69,.4)}
+.sev.s2{background:rgba(240,140,61,.16);color:var(--orange);border:1px solid rgba(240,140,61,.4)}
+.sev.s3{background:rgba(245,185,66,.14);color:var(--gold);border:1px solid rgba(245,185,66,.4)}
+.risk .rdesc{font-size:12px;line-height:1.65;color:#c0cbdc}
+.risk .bar{position:absolute;left:0;bottom:0;height:3px}
+.risk.s1 .bar{background:var(--up);width:100%}
+.risk.s2 .bar{background:var(--orange);width:66%}
+.risk.s3 .bar{background:var(--gold);width:33%}
+
+.tagline{font-size:11px;color:var(--txt3);padding:2px 0}
+.news-list{list-style:none}
+.news-list li{display:flex;gap:9px;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.05);font-size:12.5px;line-height:1.6}
+.news-list li:last-child{border-bottom:none}
+.news-list .nt{font-size:11px;color:var(--txt3);flex-shrink:0;width:36px;font-variant-numeric:tabular-nums;padding-top:1px}
+.news-list .nx{flex:1;color:#c8d2e4}
+.news-list .src{font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(74,141,255,.12);color:#7da6ff;flex-shrink:0;height:fit-content;margin-top:1px}
+.news-list .src.美股{background:rgba(242,54,69,.12);color:#ff8a93}
+.news-list .src.财联社{background:rgba(245,185,66,.12);color:var(--gold)}
+.news-list .src.金十{background:rgba(29,191,139,.12);color:#5fe0b4}
+
+.foot{text-align:center;padding:24px 16px 0;font-size:11px;color:var(--txt3);line-height:1.9}
+.foot .srcs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:12px}
+.foot .srcs span{padding:3px 9px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt2);font-size:10px}
+.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:linear-gradient(90deg,#1a1206,#2a1d06);border-top:1px solid #4a3a10;color:#e8d28a;font-size:11px;text-align:center;padding:8px;font-weight:600}
+.skl{color:var(--txt3);font-size:12px;padding:6px 0}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="row1">
+    <div>
+      <div class="ttl">每日盘前全球市场简报</div>
+      <div class="date" id="hdrDate">加载中…</div>
+    </div>
+    <div class="chip live"><span class="dot" id="liveDot"></span><span id="liveTxt">连接中</span></div>
+  </div>
+  <div class="row2">
+    <span class="chip gold" id="tempChip">情绪温度 --°</span>
+    <span class="chip" id="srcChip">数据源</span>
+    <span class="chip" id="updChip">更新中</span>
+  </div>
+  <div class="rtbar">
+    <span class="clk" id="rtClock">--:--:--</span>
+    <span class="sep">|</span>
+    <span class="sess closed" id="rtSess">休市</span>
+    <span class="sep">|</span>
+    <span>下次刷新 <span class="cd" id="rtCountdown">--s</span></span>
+    <span class="upd" id="rtUpd">尚未刷新</span>
+  </div>
+</div>
+
+<!-- 关键日程 -->
+<section>
+  <div class="sec-h"><span class="n">●</span><span class="cn">本周关键日程</span><span class="en">KEY EVENTS · 实时倒计时</span></div>
+  <div class="ev-grid" id="evGrid"><div class="ev"><div class="ev-t">加载中…</div></div></div>
+</section>
+
+<!-- 01 隔夜全球市场 -->
+<section>
+  <div class="sec-h"><span class="n">01</span><span class="cn">隔夜全球市场</span><span class="en">OVERNIGHT RECAP</span></div>
+
+  <div style="font-size:12px;color:var(--txt2);margin-bottom:8px">美股三大指数 + 费城半导体</div>
+  <div class="idx-grid" id="usGrid"><div class="idx"><div class="nm">--</div></div></div>
+  <div style="height:10px"></div>
+  <div class="card"><ul class="bul" id="usBul"><li class="b">●</li><span class="skl">等待数据…</span></ul></div>
+
+  <div style="height:14px"></div>
+  <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">欧洲三大股指</div>
+  <div class="card"><table id="euTbl"><tr><th>指数</th><th>点位</th><th>涨跌幅</th></tr><tr><td colspan=3 class="skl">—</td></tr></table></div>
+
+  <div style="height:14px"></div>
+  <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">亚太对照（含韩国 KOSPI）</div>
+  <div class="card"><table id="asiaTbl"><tr><th>指数</th><th>点位</th><th>涨跌幅</th></tr><tr><td colspan=3 class="skl">—</td></tr></table></div>
+
+  <div style="height:14px"></div>
+  <div style="font-size:12px;color:var(--txt2);margin-bottom:8px">大宗商品</div>
+  <div class="idx-grid" id="cmdGrid"><div class="idx"><div class="nm">--</div></div></div>
+  <div style="height:10px"></div>
+  <div class="card"><ul class="bul" id="cmdBul"><li class="b">●</li><span class="skl">等待数据…</span></ul></div>
+
+  <div style="height:14px"></div>
+  <div style="font-size:12px;color:var(--txt2);margin-bottom:6px">美债收益率 · 汇率</div>
+  <div class="card"><table id="bfTbl"><tr><th>品种</th><th>数值</th><th>变化</th></tr><tr><td colspan=3 class="skl">—</td></tr></table></div>
+  <div style="height:10px"></div>
+  <div class="callout co-y" id="bondWarn"><div class="t">⚠️ 美债与汇率提示</div><div id="bondWarnTxt">等待数据…</div></div>
+</section>
+
+<!-- 02 美联储与货币政策 -->
+<section>
+  <div class="sec-h"><span class="n">02</span><span class="cn">美联储与货币政策</span><span class="en">FED WATCH</span></div>
+  <div class="card">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="fedChips"></div>
+    <ul class="bul" id="fedBul"><li><span class="b">●</span><span class="skl">等待资讯…</span></li></ul>
+  </div>
+</section>
+
+<!-- 03 重大地缘政治事件 -->
+<section>
+  <div class="sec-h"><span class="n">03</span><span class="cn">重大地缘政治事件</span><span class="en">GEOPOLITICS</span></div>
+  <div class="card"><ul class="news-list" id="geoList"><li><span class="skl">等待资讯…</span></li></ul></div>
+</section>
+
+<!-- 04 对国内的影响 -->
+<section>
+  <div class="sec-h"><span class="n">04</span><span class="cn">对国内股市与经济的影响</span><span class="en">IMPACT ON CHINA</span></div>
+  <div class="impact" id="impact"><div class="callout co-d"><div class="t">等待数据…</div></div></div>
+</section>
+
+<!-- 05 昨日A股大事 -->
+<section>
+  <div class="sec-h"><span class="n">05</span><span class="cn">昨日 A 股大事</span><span class="en">YESTERDAY</span></div>
+  <div class="card" style="margin-bottom:10px"><span class="chip gold">上一交易日收盘回顾</span></div>
+  <div class="idx-grid" id="aGrid"><div class="idx"><div class="nm">--</div></div></div>
+  <div style="height:10px"></div>
+  <div class="card"><ul class="bul" id="aBul"><li><span class="b">●</span><span class="skl">等待数据…</span></li></ul></div>
+</section>
+
+<!-- 06 今日盘前研判 -->
+<section>
+  <div class="sec-h"><span class="n">06</span><span class="cn">今日 A 股盘前研判</span><span class="en">TODAY</span></div>
+  <div class="card" style="margin-bottom:10px"><span class="chip live">盘前研判 · 非盘中实时</span></div>
+  <div class="idx-grid" id="todayGrid"><div class="idx"><div class="nm">--</div></div></div>
+  <div style="height:10px"></div>
+  <div class="card"><ul class="bul" id="todayBul"><li><span class="b">●</span><span class="skl">等待数据…</span></li></ul></div>
+</section>
+
+<!-- 07 风险雷达 -->
+<section>
+  <div class="sec-h"><span class="n">07</span><span class="cn">今日需防范的风险</span><span class="en">RISK RADAR</span></div>
+  <div class="impact" id="riskWrap"><div class="risk"><div class="rt"><span class="rname">加载中…</span></div></div></div>
+</section>
+
+<!-- 资讯流 -->
+<section>
+  <div class="sec-h"><span class="n">●</span><span class="cn">市场资讯流</span><span class="en">NEWS FEED</span></div>
+  <div class="card"><ul class="news-list" id="newsList"><li><span class="skl">等待资讯…</span></li></ul></div>
+</section>
+
+<div class="foot">
+  <div class="srcs" id="footSrcs"></div>
+  数据来源：公开信息自动整理 · 仅供参考<br>
+  本报告仅为市场信息汇总，不构成投资建议<br>
+  市场有风险，投资需谨慎
+</div>
+<div class="bottom">📌 程序自动生成 · 不构成投资建议 · 理性投资</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const sign=x=>(x>0?'+':'')+x.toFixed(2)+'%';
+const RED=c=>c>0?'up':c<0?'down':'flat';
+const fmtYi=v=>v>=1e12?(v/1e12).toFixed(2)+'万亿':v>=1e8?(v/1e8).toFixed(0)+'亿':v>=1e4?(v/1e4).toFixed(0)+'万':'--';
+const snap=(window.MARKET_DATA&&window.MARKET_DATA.data)||null;
+const updAt=(window.MARKET_DATA&&window.MARKET_DATA.updatedAt)||'';
+
+function spk(closes,color){
+  if(!closes||closes.length<2)return'';
+  const w=92,h=26,min=Math.min(...closes),max=Math.max(...closes),rng=(max-min)||1;
+  const pts=closes.map((v,i)=>`${(i/(closes.length-1)*w).toFixed(1)},${(h-3-(v-min)/rng*(h-6)).toFixed(1)}`);
+  return `<svg class="spk" width="${w}" height="${h}"><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.5" opacity=".85"/></svg>`;
+}
+const lastPrice={}; // 记录上次价格，用于变动闪烁
+function idxCard(it, sparkColor){
+  const p=it.price, pc=it.pct;
+  const c = pc>0?'var(--up)':pc<0?'var(--down)':'var(--txt2)';
+  // 价格变动动效
+  let flash='';
+  if(p!=null && typeof p==='number' && lastPrice[it.code]!=null && lastPrice[it.code]!==p){
+    flash = p>lastPrice[it.code]?'flash-up':'flash-dn';
+  }
+  if(p!=null && typeof p==='number') lastPrice[it.code]=p;
+  return `<div class="idx"><div class="nm">${it.name}</div>
+    <div class="row"><div class="px num ${flash}">${p!=null?(typeof p==='number'?p.toLocaleString('zh-CN',{maximumFractionDigits:2}):p):'—'}</div>
+    <div class="pc num ${RED(pc)}">${pc!=null?(pc>=0?'▲+':'▼')+sign(pc).replace('+','').replace('-',''):'—'}</div></div>
+    ${sparkColor?spk(snap&&snap.spark&&snap.spark[it.code],c):''}</div>`;
+}
+
+/* ---- 关键日程倒计时 ---- */
+async function loadEvents(){
+  let evs=[];
+  // 优先读 events.json（http 环境），失败则用快照内嵌（file 协议也可用）
+  try{
+    const r=await fetch('events.json'); const j=await r.json(); evs=j.events||[];
+  }catch(e){ evs=(snap&&snap.events)||[]; }
+  if(!evs.length){ $('evGrid').innerHTML='<div class="ev"><div class="ev-t">暂无日程</div><div class="ev-cd" style="font-size:11px;color:var(--txt3)">编辑 site/events.json</div></div>'; return; }
+  const now=new Date();
+  evs.sort((a,b)=>new Date(a.time)-new Date(b.time));
+  function render(){
+    const now=new Date();
+    $('evGrid').innerHTML=evs.map(e=>{
+      const dt=new Date(e.time); const diff=dt-now;
+      const done=diff<-3600000; const today=Math.abs(diff)<86400000;
+      let cd;
+      if(done) cd='已结束';
+      else{
+        const d=Math.floor(diff/86400000), h=Math.floor(diff%86400000/3600000), m=Math.floor(diff%3600000/60000), s=Math.floor(diff%60000/1000);
+        cd = d>0?`${d}天 ${h}时` : h>0?`${h}时 ${m}分` : `${m}分 ${s}秒`;
+      }
+      const stars='★'.repeat(e.star||3);
+      const dtStr=dt.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<div class="ev ${done?'done':''} ${today&&!done?'today':''}">
+        <div class="ev-cat">${e.cat||'事件'}</div>
+        <div class="ev-date">${dtStr}</div>
+        <div class="ev-t">${e.title}</div>
+        <div class="ev-cd">${cd}</div>
+        <div class="stars">${stars}</div></div>`;
+    }).join('');
+  }
+  render(); setInterval(render,1000);
+}
+
+/* ---- 各板块渲染 ---- */
+function renderUs(d){
+  const us=(d.us||[]).filter(x=>x.name!=='费城半导体');
+  const sox=(d.us||[]).find(x=>x.name==='费城半导体');
+  $('usGrid').innerHTML=us.map(it=>idxCard(it,true)).join('') + (sox?idxCard({...sox,name:'费城半导体'},false):'');
+  const dji=us[0], ndx=us[1], spx=us[2];
+  const bul=[];
+  if(dji&&dji.pct!=null) bul.push(`<li><span class="b">●</span><span>美股三大指数 ${dji.pct<0?'集体收跌':'收涨'}：道指 <b class="${RED(dji.pct)}">${sign(dji.pct)}</b>、纳指 <b class="${RED(ndx&&ndx.pct)}">${ndx?sign(ndx.pct):'--'}</b>、标普 <b class="${RED(spx&&spx.pct)}">${spx?sign(spx.pct):'--'}</b>，${dji.pct<-1?'科技与顺周期板块承压，避险情绪升温':dji.pct>0.5?'风险偏好回暖，科技股领涨':'窄幅震荡，方向待选择'}。</span></li>`);
+  if(sox&&sox.pct!=null) bul.push(`<li><span class="b">●</span><span>费城半导体 <b class="${RED(sox.pct)}">${sign(sox.pct)}</b>，${sox.pct<-2?'半导体板块大幅调整，关注对A股科技链映射':sox.pct>0?'半导体企稳回升':'半导体板块分化'}。</span></li>`);
+  if(!bul.length) bul.push('<li><span class="skl">美股数据加载中，将在实时行情接入后更新…</span></li>');
+  $('usBul').innerHTML=bul.join('');
+}
+function tbl(list, valFn){
+  if(!list||!list.length) return '<tr><td colspan=3 class="skl">—</td></tr>';
+  return list.map(x=>`<tr><td>${x.name}</td><td class="num">${x.price!=null?(typeof x.price==='number'?x.price.toLocaleString('zh-CN',{maximumFractionDigits:2}):x.price):'—'}</td><td class="num ${RED(x.pct)}">${x.pct!=null?(x.pct>=0?'▲':'▼')+Math.abs(x.pct).toFixed(2)+'%':'—'}</td></tr>`).join('');
+}
+function renderEu(d){ $('euTbl').innerHTML='<tr><th>指数</th><th>点位</th><th>涨跌幅</th></tr>'+tbl(d.eu); }
+function renderAsia(d){ $('asiaTbl').innerHTML='<tr><th>指数</th><th>点位</th><th>涨跌幅</th></tr>'+tbl(d.asia); }
+function renderCmd(d){
+  $('cmdGrid').innerHTML=(d.cmd||[]).map(it=>idxCard(it,true)).join('');
+  const gold=(d.cmd||[]).find(x=>x.name.includes('黄金'));
+  const oil=(d.cmd||[]).find(x=>x.name.includes('WTI'));
+  const brent=(d.cmd||[]).find(x=>x.name.includes('布伦特'));
+  const bul=[];
+  if(gold&&gold.pct!=null) bul.push(`<li><span class="b">●</span><span>黄金 <b class="${RED(gold.pct)}">${sign(gold.pct)}</b>，${gold.pct<-0.5?'失守关键位、避险需求减弱':gold.pct>0.5?'避险情绪推升金价':'金价窄幅整理'}。</span></li>`);
+  if(oil&&oil.pct!=null) bul.push(`<li><span class="b">●</span><span>原油 <b class="${RED(oil.pct)}">${sign(oil.pct)}</b>，${oil.pct>2?'地缘供给冲击推升油价，关注通胀传导':oil.pct<-2?'需求担忧压制油价':'油价温和波动'}。</span></li>`);
+  if(!bul.length) bul.push('<li><span class="skl">商品数据加载中…</span></li>');
+  $('cmdBul').innerHTML=bul.join('');
+}
+function renderBf(d){
+  const list=(d.bfx||[]).map(x=>{
+    const isBond=x.name.includes('美债');
+    const isFx=x.name.includes('美元')||x.name.includes('人民币');
+    let val, chg;
+    if(isBond){ val=(x.price!=null?x.price.toFixed(3)+'%':'—'); chg = x.chg!=null?(x.chg*100).toFixed(1)+' bp':'—'; }
+    else { val=x.price!=null?x.price.toFixed(x.name.includes('人民币')?4:2):'—'; chg=x.pct!=null?sign(x.pct):'—'; }
+    return {name:x.name, val, chg, up:isFx?x.pct:(x.chg>0)};
+  });
+  $('bfTbl').innerHTML='<tr><th>品种</th><th>数值</th><th>变化</th></tr>'+list.map(x=>`<tr><td>${x.name}</td><td class="num">${x.val}</td><td class="num ${x.up===true?'up':x.up===false?'down':'flat'}">${x.chg}</td></tr>`).join('');
+  const u10=(d.bfx||[]).find(x=>x.name==='美债10年');
+  const cny=(d.bfx||[]).find(x=>x.name==='离岸人民币');
+  let txt='美债长端收益率与美元走势是外资流向的核心变量。';
+  if(u10&&u10.price!=null) txt=`美债10年收益率 <b class="hl">${u10.price.toFixed(3)}%</b>${u10.chg!=null?`（${(u10.chg*100).toFixed(1)}bp）`:''}，${u10.price>=4.9?'已重返5%高位，对成长股估值与新兴市场外资形成压制，需警惕外资阶段性流出':'处于中性区间，对A股扰动有限'}。`;
+  if(cny&&cny.price!=null) txt+=` 离岸人民币 <b class="hl">${cny.price.toFixed(4)}</b>，${cny.pct<0?'人民币升值，利好外资回流':'人民币承压，关注外资流向'}。`;
+  $('bondWarnTxt').innerHTML=txt;
+}
+function renderFed(d){
+  const u10=(d.bfx||[]).find(x=>x.name==='美债10年');
+  const chips=[
+    ['利率区间','3.75%-4.00%'],['美债10年',u10&&u10.price!=null?u10.price.toFixed(3)+'%':'—'],
+    ['FOMC纪要','本周四'],['鲍威尔讲话','措辞关键']
+  ];
+  $('fedChips').innerHTML=chips.map(c=>`<span class="chip">${c[0]} · ${c[1]}</span>`).join('');
+  const fed=(d.news||[]).filter(n=>/美联储|FOMC|利率|鲍威尔|议息|加息|降息|美债|BoJ|日本央行|韩国央行/.test(n.text)).slice(0,5);
+  $('fedBul').innerHTML = fed.length?fed.map(n=>`<li><span class="b">●</span><span>${n.text}</span></li>`).join(''):'<li><span class="b">●</span><span class="skl">暂无美联储相关快讯，关注本周FOMC会议纪要与官员讲话。</span></li>';
+}
+function renderGeo(d){
+  const geo=(d.news||[]).filter(n=>/中东|伊朗|沙特|以色列|俄乌|停火|地缘|关税|制裁|大选|脱欧|红海|胡塞/.test(n.text)).slice(0,8);
+  $('geoList').innerHTML = geo.length?geo.map(n=>`<li><span class="nt">${n.time||''}</span><span class="nx">${n.text}</span><span class="src ${n.tag||''}">${n.tag||'全球'}</span></li>`).join(''):'<li><span class="skl">暂无地缘政治相关快讯。</span></li>';
+}
+function renderImpact(d){
+  const u10=(d.bfx||[]).find(x=>x.name==='美债10年');
+  const cny=(d.bfx||[]).find(x=>x.name==='离岸人民币');
+  const oil=(d.cmd||[]).find(x=>x.name.includes('布伦特')||x.name.includes('WTI'));
+  const gold=(d.cmd||[]).find(x=>x.name.includes('黄金'));
+  const sox=(d.us||[]).find(x=>x.name==='费城半导体');
+  const cyb=(d.aIndices||[]).find(x=>x.name==='创业板指');
+  const cards=[];
+  if(cyb&&cyb.pct!=null) cards.push(['co-g','利多 · 风险偏好',`A股上一交易日创业板 <b class="hlu">${sign(cyb.pct)}</b>，深V韧性叠加美股隔夜企稳，利于盘前情绪修复。`]);
+  if(u10&&u10.price!=null) cards.push([u10.price>=4.9?'co-o':'co-g', u10.price>=4.9?'关注 · 利率传导':'利多 · 利率传导',`美债10年 <b class="hl">${u10.price.toFixed(3)}%</b>${u10.price>=4.9?'，高位压制成长股估值与外资风险偏好':'，处于中性偏低区间，利于国内估值修复'}。`]);
+  if(oil&&oil.pct!=null) cards.push(['co-o','关注 · 油价冲击',`原油 <b class="${RED(oil.pct)}">${sign(oil.pct)}</b>，${oil.pct>2?'输入性通胀担忧升温，关注资源股再平衡与化工链成本':'油价平稳，通胀扰动有限'}。`]);
+  if(sox&&sox.pct!=null) cards.push(['co-o','关注 · 科技链映射',`费城半导体 <b class="${RED(sox.pct)}">${sign(sox.pct)}</b>，${sox.pct<-2?'警惕A股半导体/消费电子开盘承压':sox.pct>0?'利好A股科技映射方向':'科技板块分化'}。`]);
+  if(cny&&cny.price!=null) cards.push([cny.pct<0?'co-g':'co-o','汇率与外资',`离岸人民币 <b class="hl">${cny.price.toFixed(4)}</b>，${cny.pct<0?'升值利好外资回流':'承压需关注外资流向'}。`]);
+  cards.push(['co-d','中性 · 资源股分化',`油价与黄金走势背离时，资源板块内部将分化，关注${gold&&gold.pct!=null?'黄金/油/铜铝的相对强度':'商品相对强度'}。`]);
+  $('impact').innerHTML=cards.map(c=>`<div class="callout ${c[0]}"><div class="t">${c[1]}</div><div>${c[2]}</div></div>`).join('');
+}
+function renderA(d){
+  const ai=d.aIndices||[];
+  const hs=(d.asia||[]).find(x=>x.name==='恒生科技')||(d.asia||[]).find(x=>x.name==='恒生指数');
+  const list=[...ai.slice(0,3)];
+  if(hs) list.push({...hs,name:'恒生科技'});
+  $('aGrid').innerHTML=list.map(it=>idxCard(it,true)).join('');
+  const b=d.breadth||{}, bo=d.boards||{};
+  const bul=[];
+  if(ai[0]&&ai[0].pct!=null) bul.push(`<li><span class="b">●</span><span>上证 <b class="${RED(ai[0].pct)}">${sign(ai[0].pct)}</b>、深成 <b class="${RED(ai[1]&&ai[1].pct)}">${ai[1]?sign(ai[1].pct):'--'}</b>、创业板 <b class="${RED(ai[2]&&ai[2].pct)}">${ai[2]?sign(ai[2].pct):'--'}</b>，${ai[2]&&ai[2].pct>2?'成长股深V反转，赚钱效应回升':ai[0]&&ai[0].pct<0?'指数调整，观望情绪升温':'指数窄幅震荡'}。</span></li>`);
+  if(b.up!=null) bul.push(`<li><span class="b">●</span><span>全市场 <b class="hlu">${b.up}</b> 涨 / <b class="hld">${b.down}</b> 跌，两市成交 <b class="hl">${fmtYi(b.turnover)}</b>。</span></li>`);
+  if(b.zt!=null) bul.push(`<li><span class="b">●</span><span>涨停 <b class="hlu">${b.zt}</b> 家、炸板 <b class="hld">${b.zb||0}</b> 家（炸板率 ${(b.zhabanRate*100).toFixed(0)}%）、最高 <b class="hl">${b.maxLadder}板</b>。</span></li>`);
+  if(bo.topUp&&bo.topUp[0]) bul.push(`<li><span class="b">●</span><span>领涨：<b class="hlu">${bo.topUp[0].name}</b>（${sign(bo.topUp[0].pct)}）；主力净流入：<b class="hl">${(bo.topInflow&&bo.topInflow[0]||{}).name||'—'}</b>。</span></li>`);
+  if(!bul.length) bul.push('<li><span class="skl">A股数据加载中…</span></li>');
+  $('aBul').innerHTML=bul.join('');
+}
+function renderToday(d){
+  const ai=d.aIndices||[];
+  $('todayGrid').innerHTML=ai.slice(0,3).map(it=>`<div class="idx"><div class="nm">${it.name}</div><div class="row"><div class="px num">${it.price!=null?it.price.toLocaleString('zh-CN',{maximumFractionDigits:2}):'—'}</div><div class="pc flat">昨收参考</div></div></div>`).join('')
+    + `<div class="idx"><div class="nm">个股涨跌</div><div class="row"><div class="px">待开盘</div><div class="pc flat">盘前</div></div></div>`;
+  const u10=(d.bfx||[]).find(x=>x.name==='美债10年');
+  const oil=(d.cmd||[]).find(x=>x.name.includes('布伦特')||x.name.includes('WTI'));
+  const cyb=ai[2];
+  const bul=[];
+  bul.push(`<li><span class="b">●</span><span>盘前基调：${cyb&&cyb.pct>0?'偏乐观，关注顺势低吸':'偏谨慎，控制仓位等待企稳'}。隔夜美股${(d.us||[])[0]&&(d.us||[])[0].pct<0?'调整拖累风险偏好':'企稳利于情绪修复'}。</span></li>`);
+  if(oil&&oil.pct>2) bul.push(`<li><span class="b">●</span><span>关注方向：石油石化、化工（油价大涨映射）；承压方向：航空、航运（成本端承压）。</span></li>`);
+  else bul.push(`<li><span class="b">●</span><span>关注方向：上一交易日领涨板块（${(d.boards&&d.boards.topUp&&d.boards.topUp[0]||{}).name||'—'}）的延续性，以及主力净流入方向。</span></li>`);
+  if(u10&&u10.price>=4.9) bul.push(`<li><span class="b">●</span><span>外部约束：美债10年 ${u10.price.toFixed(3)}% 高位，警惕外资重仓股与高估值成长股承压。</span></li>`);
+  bul.push(`<li><span class="b">●</span><span>本周关键：FOMC会议纪要、英伟达财报、国内经济数据，决定中期方向。</span></li>`);
+  $('todayBul').innerHTML=bul.join('');
+}
+function renderRisk(d){
+  const u10=(d.bfx||[]).find(x=>x.name==='美债10年');
+  const oil=(d.cmd||[]).find(x=>x.name.includes('布伦特')||x.name.includes('WTI'));
+  const sox=(d.us||[]).find(x=>x.name==='费城半导体');
+  const cny=(d.bfx||[]).find(x=>x.name==='离岸人民币');
+  const risks=[];
+  if(oil&&oil.pct>2) risks.push([1,'油价输入性通胀冲击',`布伦特/WTI 大涨 ${sign(oil.pct)}，关注化工成本链与资源股再平衡，通胀预期升温或压制货币政策空间。`]);
+  if(u10&&u10.price>=4.9) risks.push([1,'美债长端收益率高位',`美债10年 ${u10.price.toFixed(3)}% 重返5%附近，压制成长股估值与外资风险偏好，警惕北向资金流出。`]);
+  risks.push([1,'FOMC会议纪要与官员表态',`本周美联储会议纪要及官员讲话若偏鹰，将扰动全球风险资产，关注措辞对降息路径的指引。`]);
+  if(sox&&sox.pct<-2) risks.push([2,'科技巨头财报与半导体映射',`费城半导体 ${sign(sox.pct)}，英伟达财报前夕波动加剧，警惕A股科技/消费电子开盘承压。`]);
+  else risks.push([2,'科技巨头财报季',`英伟达等科技巨头财报落地前后，全球科技股波动加大，注意A股相关映射方向。`]);
+  if(cny&&cny.pct>0.2) risks.push([2,'人民币汇率承压',`离岸人民币 ${cny.price.toFixed(4)} 走弱，关注外资流向与外资重仓股表现。`]);
+  risks.push([2,'A股三季报尾声与解禁',`三季报披露尾声，业绩雷与解禁高峰可能引发个股黑天鹅，回避高位绩差股。`]);
+  risks.push([3,'流动性边际变化',`关注央行公开市场操作与MLF续作，资金面波动影响高估值题材股。`]);
+  $('riskWrap').innerHTML=risks.map(r=>`<div class="risk s${r[0]}">
+    <div class="rt"><span class="rname">${r[1]}</span><span class="sev s${r[0]}">${['','最高','高','中'][r[0]]}</span></div>
+    <div class="rdesc">${r[2]}</div><div class="bar"></div></div>`).join('');
+}
+function renderNews(d){
+  const list=(d.news||[]).slice(0,20);
+  $('newsList').innerHTML = list.length?list.map(n=>`<li><span class="nt">${n.time||''}</span><span class="nx">${n.text}</span><span class="src ${n.tag||''}">${n.tag||'全球'}</span></li>`).join(''):'<li><span class="skl">暂无资讯，等待实时抓取…</span></li>';
+}
+function renderTemp(d){
+  const t=d.temperature||50;
+  $('tempChip').textContent='情绪温度 '+t+'°';
+  const lvl=t<25?'冰点':t<40?'偏冷':t<55?'中性':t<70?'偏暖':t<85?'过热':'亢奋';
+  $('tempChip').textContent='情绪 '+t+'° · '+lvl;
+}
+
+function renderAll(d){
+  $('hdrDate').textContent=(d.tradeDate||'')+' · 盘前简报';
+  renderTemp(d); renderUs(d); renderEu(d); renderAsia(d); renderCmd(d); renderBf(d);
+  renderFed(d); renderGeo(d); renderImpact(d); renderA(d); renderToday(d); renderRisk(d); renderNews(d);
+}
+
+/* ---- 实时行情刷新（东财 JSONP） ---- */
+let cbN=0;
+function jsonp(url,to=8000){
+  return new Promise((res,rej)=>{
+    const name='__cb'+(++cbN);
+    const t=setTimeout(()=>{delete window[name];s.remove();rej(new Error('to'));},to);
+    window[name]=d=>{clearTimeout(t);delete window[name];s.remove();res(d);};
+    const s=document.createElement('script');
+    s.src=url+(url.includes('?')?'&':'?')+'cb='+name;
+    s.onerror=()=>{clearTimeout(t);delete window[name];s.remove();rej(new Error('net'));};
+    document.head.appendChild(s);
+  });
+}
+const ALL_SECIDS=['100.DJI','100.IXIC','100.SPX','100.INX','100.SOX','100.DAX','100.STOXX50E','100.SX5E','100.FTSE','100.CAC40',
+  '100.KS11','100.N225','100.HSI','100.HSTECH','101.GC00Y','113.CL00Y','113.CO00Y','102.CL00Y','102.CO00Y',
+  '171.US2Y','171.US10Y','171.US30Y','100.UDI','133.USDCNH','1.000001','0.399001','0.399006','1.000016','1.000300','1.000905','1.000852','0.899050'];
+async function liveRefresh(){
+  if(!snap){ $('liveTxt').textContent='无快照'; return; }
+  try{
+    const r=await jsonp(`https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&secids=${ALL_SECIDS.join(',')}&fields=f2,f3,f4,f6,f12,f14`);
+    const mp={};(r.data.diff||[]).forEach(x=>mp[x.f12]=x);
+    const d=snap;
+    const apply=arr=>arr.forEach(it=>{const x=mp[it.code.split('.')[1]]; if(x&&x.f2!=null&&x.f2!=='-'){it.price=+x.f2;it.pct=+x.f3;if(x.f4!=null&&x.f4!=='-')it.chg=+x.f4;}});
+    ['us','eu','asia','cmd','bfx','aIndices','bs'].forEach(k=>apply(d[k]=d[k]||[]));
+    renderAll(d);
+    $('liveDot').classList.add('on');
+    const now=new Date();
+    $('liveTxt').textContent='实时 '+now.toLocaleTimeString('zh-CN',{hour12:false});
+    $('rtUpd').textContent='最后刷新 '+now.toLocaleTimeString('zh-CN',{hour12:false});
+  }catch(e){
+    $('liveTxt').textContent='实时源不可达·显示快照';
+    $('liveDot').classList.remove('on');
+  }
+}
+
+/* ---- 交易时段检测 ---- */
+function session(){
+  const n=new Date(), h=n.getHours(), m=n.getMinutes(), t=h*60+m, w=n.getDay();
+  const weekday = w>=1 && w<=5;
+  const aOpen = weekday && ((t>=565 && t<=690) || (t>=780 && t<=905)); // 9:25-11:30 / 13:00-15:05
+  if(aOpen) return {cls:'open', txt:'A股盘中'};
+  // 美股 21:30-次日04:00（夏令时略简化）
+  const usOpen = (h>=21 && h<24) || (h>=0 && h<4);
+  if(usOpen && w>=1 && w<=6) return {cls:'us', txt:'美股盘中'};
+  if(weekday && t>=560 && t<565) return {cls:'open', txt:'集合竞价'};
+  return {cls:'closed', txt:'休市'};
+}
+function refreshInterval(){
+  const s=session();
+  return (s.cls==='open') ? 10000 : (s.cls==='us' ? 15000 : 60000); // 盘中10s / 美股15s / 其他60s
+}
+
+/* ---- 时钟 + 倒计时 + 整点拾取新快照 ---- */
+let nextRefreshAt=0, refreshTimer=null;
+function scheduleNext(){
+  nextRefreshAt = Date.now() + refreshInterval();
+  if(refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(()=>{ liveRefresh().then(scheduleNext).catch(()=>scheduleNext()); }, refreshInterval());
+}
+function tickClock(){
+  const n=new Date();
+  $('rtClock').textContent = n.toLocaleTimeString('zh-CN',{hour12:false});
+  const s=session();
+  const el=$('rtSess'); el.className='sess '+s.cls; el.textContent=s.txt;
+  const left = Math.max(0, Math.round((nextRefreshAt-Date.now())/1000));
+  $('rtCountdown').textContent = left+'s';
+  // 整点附近自动 reload，拾取云端刷新的新快照（计划任务/Actions 7:35更新，8:05前后reload生效）
+  if(n.getMinutes()===5 && n.getSeconds()<2){ location.reload(); }
+}
+
+/* ---- 启动 ---- */
+(function init(){
+  // 页脚来源
+  const allSrcs=(window.MARKET_DATA&&window.MARKET_DATA.sources)||['新华社','财联社','国际金融报','华尔街见闻','金十数据','Adler金融日报','同花顺'];
+  $('footSrcs').innerHTML=allSrcs.map(s=>`<span>${s}</span>`).join('');
+  $('srcChip').textContent='来源 '+(allSrcs.length)+'家';
+  $('updChip').textContent=updAt?('更新 '+updAt.slice(11,16)):'更新中';
+  loadEvents();
+  if(snap){ renderAll(snap); $('liveTxt').textContent='快照已载入·刷新中'; }
+  else { $('liveTxt').textContent='无快照·等待实时'; }
+  liveRefresh().then(scheduleNext).catch(scheduleNext);
+  setInterval(tickClock, 1000);
+  tickClock();
+})();
+</script>
+</body>
+</html>
